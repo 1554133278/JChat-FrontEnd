@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="css/mui.css" rel="stylesheet" />
+		<script src="js/mui.js"></script>
+		<script src="js/weixin_utils.js"></script>
+		<script type="text/javascript">
+			mui.init();
+		
+			mui.plusReady(function() {
+				var user = util.getUser();
+				document.getElementById("nickname").value = user.nickName;
+				
+				document.getElementById("save_but").addEventListener("tap", function() {
+					var nickname = document.getElementById("nickname").value;
+					if(nickname == null){
+						alert("修改昵称需要填写昵称!")
+					} else {
+						// 2.封装对象
+						var param = new Object();
+						param.id = user.id;
+						param.nickName = nickname;
+						
+						// 3.发送请求
+						// console.info(JSON.stringify(param))
+						util.ajax({
+							url: url.update_url,
+							data: param,
+							success: function(data) {
+								if (data.code == 200) {
+									updateUser();
+								} else {
+									plus.nativeUI.toast(data.msg)
+								}
+							}
+						});
+					}
+				});
+				
+				function updateUser() {
+					util.ajax({
+						url: url.findUserById_url,
+						data: {
+							"id": user.id,
+						},
+						success: function(data) {
+							if (data.code == 200) {
+								var user = data.data; // user是JOSN对象
+								util.setUser(user);
+								var cpage = plus.webview.currentWebview();
+								plus.webview.open("index.html", "index.html");
+								cpage.close();
+							} else {
+								plus.nativeUI.toast(data.msg)
+							}
+						}
+					})
+				}
+			});
+		</script>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">修改昵称</h1>
+			<div class="mui-button-row">
+			    <button type="button" class="mui-btn mui-btn-primary" style="left: 42%;margin-top: -1%;" id="save_but">保存</button>
+			</div>
+		</header>
+		<form class="mui-input-group" style="margin-top: 10%;">
+		    <div class="mui-input-row">
+		    <input id="nickname" type="text" class="mui-input-clear" placeholder="请输入用户名">
+		    </div>
+		</form>
+	</body>
+
+</html>

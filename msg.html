@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<meta name="viewport"
+			content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="css/mui.css" rel="stylesheet" />
+		<script src="js/weixin_utils.js"></script>
+		<script src="js/mui.js"></script>
+		<script type="text/javascript">
+			mui.init();
+
+			mui.plusReady(function() {
+				var keys = plus.storage.getAllKeys();
+				// console.log(keys);
+				var idList = [];
+				keys.forEach(item => {
+					if (item.match("chat_msg_history")) {
+						idList.push(item.charAt(item.length - 1));
+					}
+				})
+
+				if (idList.length > 0) {
+					searchFriendList(idList);
+				}
+			});
+			
+			function searchFriendList(targetIds) {
+				var user = util.getUser();
+				// 查询用户的好友
+				util.ajax({
+					url: url.getFriendListByUid_url,
+					data: {
+						"userId": user.id,
+						"targetIds": targetIds.toString()
+					},
+					success: function(resp) {
+						// console.info("resp:" + JSON.stringify(resp))
+						if (resp.code == 200) {
+							// 获取好友的列表
+							var friendList = resp.data;
+							if(friendList != null){
+								showFriedList(friendList);
+								
+								mui(".mui-table-view-cell").on('tap', 'a', function() {
+									var fid = this.getAttribute("fid");
+									var name = this.getAttribute("name");
+									// 打开聊天页面
+									mui.openWindow({
+										url: 'chat_msg.html',
+										id: 'chat_msg_' + fid, // 页面id不能重复
+										extras: { // 参数
+											"fid": fid, //扩展参数
+											"name": name //扩展参数
+										}
+									});
+								})
+							}
+						}
+					}
+				})
+			}
+			
+			function showFriedList(fList) {
+				var user = util.getUser();
+				for (var i = 0; i < fList.length; i++) {
+					var f = fList[i]; // 好友的记录对象
+					var chat = plus.storage.getItem("chat_msg_history_" + user.id + "_" + f.friend.id);
+					var chat1;
+					var index;
+					var realChat;
+					if(chat!= null && chat.length > 0){
+						chat1 = chat.substr(chat.lastIndexOf("content") + 10);
+						index = chat1.indexOf(",");
+						realChat = chat1.substr(0, index -1);
+					}
+			
+					var liEle = document.getElementById("all");
+					if (liEle) {
+						var name = f.friend.nickName;
+						if (f.remark != null) {
+							name = f.remark;
+						}
+			
+						var html = "";
+						html += '<li class="mui-table-view-cell mui-media" >';
+						html += '<a href="javascript:;" fid ="' + f.friend.id + '" name ="' + name + '">';
+						if (f.friend.minHead) {
+							html += '<img class="mui-media-object mui-pull-left" src="' + f.friend.minHead + '">';
+						} else {
+							html += '<img class="mui-media-object mui-pull-left" src="image/myheader.png">';
+						}
+						html += '<div class="mui-media-body">';
+						html += name;
+						if(realChat!= null && realChat.length > 0){
+							html += '<p class="mui-ellipsis">';
+							if(realChat.match("jpg")){
+								html += "[发送图片]";
+							} else if(realChat.match("mp3")){
+								html += "[语言聊天]";
+							} else {
+								html += realChat;
+							}
+							html += '</p>';
+						}
+						html += '</div>';
+						html += '</a>';
+						html += '</li>';
+			
+						liEle.insertAdjacentHTML("beforeend", html);
+					}
+				}
+			}
+		</script>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<h1 class="mui-title">JChat</h1>
+		</header>
+		<div class="mui-content">
+			<div id='list' class="mui-indexed-list">
+				<div class="mui-indexed-list-inner">
+					<ul class="mui-table-view" id="refreshContainer">
+						<li id="all" class="mui-table-view-divider mui-indexed-list-group"></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
